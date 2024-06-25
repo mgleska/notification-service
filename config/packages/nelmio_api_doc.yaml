@@ -1,0 +1,10 @@
+nelmio_api_doc:
+    documentation:
+        info:
+            title: Notification service (recruitment task)
+            description: Service that accepts the necessary information and sends a notification to customers.
+            version: 0.1.0
+    areas: # to filter documented areas
+        path_patterns:
+            - ^/api(?!/doc$) # Accepts routes under /api except /api/doc
+            - ^/inbox

@@ -1,0 +1,35 @@
+framework:
+    messenger:
+        # Uncomment this (and the failed transport below) to send failed messages to this transport for later handling.
+        # failure_transport: failed
+
+        transports:
+            # https://symfony.com/doc/current/messenger.html#transport-configuration
+            # async: '%env(MESSENGER_TRANSPORT_DSN)%'
+            # failed: 'doctrine://default?queue_name=failed'
+            # sync: 'sync://'
+
+            outbox-schedule:
+                dsn: '%env(MESSENGER_TRANSPORT_DSN)%'
+                retry_strategy:
+                    max_retries: 5
+                    delay: 2000
+                    multiplier: 1.3
+                failure_transport: failed-outbox-schedule
+
+            failed-outbox-schedule:
+                dsn: '%env(MESSENGER_TRANSPORT_FAILED_DSN)%'
+
+        routing:
+            # Route your messages to the transports
+            # 'App\Message\YourMessage': async
+
+            'App\Domain\Dto\OutboxScheduleDto': outbox-schedule
+
+# when@test:
+#    framework:
+#        messenger:
+#            transports:
+#                # replace with your transport name here (e.g., my_transport: 'in-memory://')
+#                # For more Messenger testing tools, see https://github.com/zenstruck/messenger-test
+#                async: 'in-memory://'

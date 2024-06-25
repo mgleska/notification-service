@@ -1,0 +1,54 @@
+name: notification-service
+
+services:
+
+  php-api:
+    build:
+      context: .
+    image: local-php-api
+    restart: unless-stopped
+    depends_on:
+      - database
+    environment:
+      DATABASE_URL: "postgresql://app:!ChangeMe!@database:5432/app?serverVersion=16&charset=utf8"
+      USED_CHANNELS: "CHANNEL_SMS,CHANNEL_EMAIL,CHANNEL_FAIL"
+    ports:
+      - "127.0.0.1:8000:8000"
+    command: ["/bin/sh", "-c", "/app/docker/wait-for database:5432; sleep 2; php bin/console doctrine:migrations:migrate; php -S 0.0.0.0:8000 -t public/"]
+
+  php-worker-1:
+    image: local-php-api
+    depends_on:
+      - php-api
+    environment:
+      DATABASE_URL: "postgresql://app:!ChangeMe!@database:5432/app?serverVersion=16&charset=utf8"
+    command: ["/bin/sh", "-c", "/app/docker/wait-for database:5432; sleep 3; php bin/console messenger:consume outbox-schedule -v"]
+
+  php-worker-2:
+    image: local-php-api
+    depends_on:
+      - php-api
+    environment:
+      DATABASE_URL: "postgresql://app:!ChangeMe!@database:5432/app?serverVersion=16&charset=utf8"
+    command: ["/bin/sh", "-c", "/app/docker/wait-for database:5432; sleep 4; php bin/console messenger:consume outbox-schedule -v"]
+
+  ###> doctrine/doctrine-bundle ###
+  database:
+    image: postgres:${POSTGRES_VERSION:-16}-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-app}
+      # You should definitely change the password in production
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-!ChangeMe!}
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+    volumes:
+      - database_data:/var/lib/postgresql/data:rw
+      # You may use a bind-mounted host directory instead, so that it is harder to accidentally remove the volume and lose all your data!
+      # - ./docker/db/data:/var/lib/postgresql/data:rw
+    ports:
+      - "127.0.0.1:5432:5432"
+    ###< doctrine/doctrine-bundle ###
+
+volumes:
+  ###> doctrine/doctrine-bundle ###
+  database_data:
+  ###< doctrine/doctrine-bundle ###
